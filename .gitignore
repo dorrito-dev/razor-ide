@@ -1,0 +1,70 @@
+# =============================================================================
+# Razor IDE — .gitignore
+# =============================================================================
+# What is ignored and why:
+#
+#   node_modules/       — npm dependency tree (~100s of MB); restored via `npm install`
+#   src/web/vendor/     — esbuild output bundle; rebuilt via `npm run build`
+#   run/                — runtime-generated secrets (admin key, session state,
+#                         audit logs, .seb files). NEVER commit these — they
+#                         contain per-run credentials and exam data.
+#   build/              — generated AppLocker XML and other build artifacts
+#   seb/generated/      — generated .seb container files
+#   *.seb               — encrypted/plain Safe Exam Browser config files
+#                         (may contain exam passwords or server credentials)
+#   .env                — local environment overrides (secrets must not be tracked)
+#   .env.local
+#   *.log               — log files written by RAZOR_LOG_FILE
+#   *.pem               — PEM keys written to run/ per-session
+#   npm-debug.log*
+#   yarn-error.log*
+#   .DS_Store           — macOS metadata (irrelevant here but safe to exclude)
+#   Thumbs.db           — Windows Explorer thumbnail cache
+#   desktop.ini         — Windows folder settings
+# =============================================================================
+
+# --- npm ---
+node_modules/
+npm-debug.log*
+yarn-error.log*
+package-lock.json.bak
+
+# --- Build output (esbuild bundle) ---
+src/web/vendor/
+
+# --- Runtime-generated directory (secrets + audit logs) ---
+# This is the most security-critical exclusion.
+# run/ contains: admin-key.pem, razor.plist.xml, grant CSVs, audit log.
+run/
+
+# --- Build artifacts ---
+build/
+
+# --- SEB generated configs ---
+seb/generated/
+*.seb
+
+# --- Env files (local secrets) ---
+.env
+.env.local
+.env.*.local
+
+# --- Log files ---
+*.log
+
+# --- PEM keys ---
+*.pem
+
+# --- OS junk ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Editor / IDE ---
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

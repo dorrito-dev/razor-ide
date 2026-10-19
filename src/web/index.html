@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Razor</title>
+    <link rel="stylesheet" href="/vendor/xterm.css" />
+    <link rel="stylesheet" href="/vendor/app.css" />
+  </head>
+  <body>
+    <!-- Locked overlay: shown whenever the gate is not RUNNING. -->
+    <div id="lock" class="lock" hidden>
+      <div class="lock-card">
+        <h1 id="lock-title">Waiting for administrator</h1>
+        <p id="lock-message">
+          This session has not been authorised yet. It starts only when an
+          administrator sends a start request.
+        </p>
+        <dl class="lock-facts">
+          <dt>Mode</dt><dd id="lock-mode">--</dd>
+          <dt>Gate</dt><dd id="lock-state">--</dd>
+          <dt>Lease</dt><dd id="lock-lease">--</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div id="app" class="app" inert>
+      <header class="titlebar">
+        <span class="brand">Razor</span>
+        <span class="file-label" id="active-file">no file open</span>
+        <span class="spacer"></span>
+        <span class="status-pill" id="seb-status" title="Safe Exam Browser attestation">SEB: unknown</span>
+        <span class="status-pill" id="lease-status" title="Session lease">lease: --</span>
+        <button id="save" class="btn" type="button" title="Save (Ctrl+S)">Save</button>
+      </header>
+
+      <div class="body">
+        <aside class="explorer" id="explorer">
+          <div class="panel-title">
+            <span>Explorer</span>
+            <button id="refresh" class="icon-btn" type="button" title="Refresh">&#x21bb;</button>
+          </div>
+          <ul class="tree" id="tree"></ul>
+        </aside>
+
+        <main class="editor-wrap">
+          <div class="tabs" id="tabs"></div>
+          <div id="editor" class="editor"></div>
+        </main>
+      </div>
+
+      <section class="terminal-wrap">
+        <div class="panel-title">
+          <span>Terminal</span>
+          <span class="spacer"></span>
+          <span class="hint" id="term-hint">audited</span>
+          <button id="term-restart" class="icon-btn" type="button" title="Restart terminal">&#x21bb;</button>
+        </div>
+        <div id="terminal" class="terminal"></div>
+      </section>
+
+      <div id="toast" class="toast" hidden></div>
+    </div>
+
+    <script src="/vendor/app.js"></script>
+  </body>
+</html>
