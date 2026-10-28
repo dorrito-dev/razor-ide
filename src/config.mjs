@@ -1,9 +1,18 @@
-// Tiny config + logging helpers shared by every Razor subsystem.
-import { mkdirSync, appendFileSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, appendFileSync, readFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+
+// Automatically load .env file if present
+const envFile = join(ROOT, '.env');
+if (existsSync(envFile) && typeof process.loadEnvFile === 'function') {
+  try {
+    process.loadEnvFile(envFile);
+  } catch {
+    /* ignore malformed .env or permission errors */
+  }
+}
 
 export const RUN_DIR = join(ROOT, 'run');
 export const BUILD_DIR = join(ROOT, 'build');

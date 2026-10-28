@@ -414,15 +414,102 @@ function debounce(fn, ms) {
 }
 
 // ---------------------------------------------------------------------------
+// File actions: New File, Download, Export ZIP
+// ---------------------------------------------------------------------------
+
+async function promptNewFile() {
+  const name = window.prompt('Enter new file name (e.g. solution.py, test.js):', '');
+  if (!name || !name.trim()) return;
+  const cleanName = name.trim();
+  try {
+    const response = await fetch(`/api/files/write?path=${encodeURIComponent(cleanName)}`, {
+      method: 'PUT',
+      credentials: 'same-origin',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ content: '' }),
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      toast(`Create failed: ${body.reason ?? body.error ?? response.status}`, 'error');
+      return;
+    }
+    toast(`Created ${cleanName}`, 'ok');
+    await refreshTree();
+    await openFile(cleanName);
+  } catch (err) {
+    toast(`Create failed: ${err.message}`, 'error');
+  }
+}
+
+function downloadActiveFile() {
+  if (!state.active) {
+    toast('No file is currently open to download', 'warn');
+    return;
+  }
+  const a = document.createElement('a');
+  a.href = `/api/files/download?path=${encodeURIComponent(state.active)}`;
+  a.download = state.active.split('/').pop();
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  toast(`Downloading ${state.active}...`, 'ok');
+}
+
+function exportWorkspaceZip() {
+  const a = document.createElement('a');
+  a.href = '/api/files/export-zip';
+  a.download = 'workspace.zip';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  toast('Exporting workspace zip archive...', 'ok');
+}
+
+function runActiveFile() {
+  if (!state.active) {
+    toast('No file is currently open to run', 'warn');
+    return;
+  }
+  void saveActive().then(() => {
+    if (!state.socket || state.socket.readyState !== WebSocket.OPEN) {
+      toast('Terminal is not connected', 'error');
+      return;
+    }
+    const ext = state.active.split('.').pop().toLowerCase();
+    const filename = state.active.replace(/\//g, '\\');
+    let cmd = '';
+    if (ext === 'py') cmd = `python "${filename}"`;
+    else if (ext === 'js' || ext === 'mjs' || ext === 'cjs') cmd = `node "${filename}"`;
+    else if (ext === 'c') cmd = `gcc "${filename}" -o "${filename}.exe"; .\\"${filename}.exe"`;
+    else if (ext === 'cpp') cmd = `g++ "${filename}" -o "${filename}.exe"; .\\"${filename}.exe"`;
+    else if (ext === 'ps1') cmd = `powershell -File "${filename}"`;
+    else if (ext === 'bat' || ext === 'cmd') cmd = `cmd /c "${filename}"`;
+    else cmd = `.\\"${filename}"`;
+
+    state.socket.send(JSON.stringify({ type: 'input', data: `${cmd}\r` }));
+    state.term?.focus();
+    toast(`Running ${cmd}...`, 'ok');
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Boot
 // ---------------------------------------------------------------------------
 
 $('save').addEventListener('click', () => void saveActive());
+$('run-code')?.addEventListener('click', runActiveFile);
+$('term-run')?.addEventListener('click', runActiveFile);
+$('download-file')?.addEventListener('click', downloadActiveFile);
+$('export-zip')?.addEventListener('click', exportWorkspaceZip);
+$('new-file')?.addEventListener('click', () => void promptNewFile());
 $('refresh').addEventListener('click', () => void refreshTree());
 $('term-restart').addEventListener('click', restartTerminal);
 
 window.addEventListener('keydown', (event) => {
-  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+  if (event.key === 'F5') {
+    event.preventDefault();
+    runActiveFile();
+  } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
     event.preventDefault();
     void saveActive();
   }

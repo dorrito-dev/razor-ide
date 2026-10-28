@@ -76,7 +76,7 @@ async function main() {
 
   // -- 3. workspace ----------------------------------------------------------
   const root = workspaceDir(env);
-  const workspace = new Workspace(root);
+  const workspace = new Workspace(root, { isolate: process.env.RAZOR_ISOLATE_WORKSPACE !== '0' });
   seedWorkspace(workspace);
   log.info(`workspace: ${workspace.root}`);
 

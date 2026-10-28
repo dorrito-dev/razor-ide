@@ -28,7 +28,36 @@ import {
   unlinkSync,
   writeFileSync,
 } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
+
+/**
+ * Marks a folder as a protected operating system file on Windows (+s +h).
+ * In Windows File Explorer, folders with both System and Hidden attributes
+ * are completely invisible and inaccessible under normal explorer browsing.
+ */
+export function protectIsolatedFolder(root) {
+  if (process.platform === 'win32' && existsSync(root)) {
+    try {
+      execFileSync('attrib', ['+s', '+h', root], { stdio: 'ignore' });
+    } catch {
+      /* ignore if attrib is unavailable or permissions restricted */
+    }
+  }
+}
+
+/**
+ * Removes the System and Hidden attributes so the folder can be viewed in File Explorer.
+ */
+export function unprotectIsolatedFolder(root) {
+  if (process.platform === 'win32' && existsSync(root)) {
+    try {
+      execFileSync('attrib', ['-s', '-h', root], { stdio: 'ignore' });
+    } catch {
+      /* ignore */
+    }
+  }
+}
 
 export class PathRejected extends Error {
   constructor(reason, detail) {
@@ -50,9 +79,12 @@ export const MAX_TREE_ENTRIES = 5_000;
 export class Workspace {
   #root;
 
-  constructor(root) {
+  constructor(root, { isolate = false } = {}) {
     if (!existsSync(root)) mkdirSync(root, { recursive: true });
     this.#root = realpathSync(root);
+    if (isolate || process.env.RAZOR_ISOLATE_WORKSPACE === '1') {
+      protectIsolatedFolder(this.#root);
+    }
   }
 
   get root() {
@@ -257,6 +289,38 @@ export class Workspace {
     if (stat.isDirectory()) rmSync(absolute, { recursive: true, force: true });
     else unlinkSync(absolute);
     return { path: this.toRelative(absolute), removed: true };
+  }
+
+  /**
+   * Retrieve all files recursively for packaging / export.
+   * @returns {Array<{ name: string, data: Buffer }>}
+   */
+  getAllFiles() {
+    const list = [];
+    const walk = (dir) => {
+      let dirents;
+      try {
+        dirents = readdirSync(dir, { withFileTypes: true });
+      } catch {
+        return;
+      }
+      for (const d of dirents) {
+        if (d.name.startsWith('.razor')) continue;
+        const full = join(dir, d.name);
+        if (d.isDirectory()) {
+          walk(full);
+        } else if (d.isFile()) {
+          try {
+            const data = readFileSync(full);
+            list.push({ name: this.toRelative(full), data });
+          } catch {
+            /* ignore unreadable or locked files */
+          }
+        }
+      }
+    };
+    walk(this.#root);
+    return list;
   }
 }
 

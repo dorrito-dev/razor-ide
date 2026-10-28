@@ -11,13 +11,14 @@
 import { createServer } from 'node:http';
 import { webcrypto as crypto } from 'node:crypto';
 import { readFileSync, existsSync, statSync } from 'node:fs';
-import { extname, join, normalize } from 'node:path';
+import { basename, extname, join, normalize } from 'node:path';
 import { WebSocketServer } from 'ws';
 import { logger, ROOT } from './config.mjs';
 import { authenticateAdmin, verifyHostAndOrigin, verifySebRequest } from './admin.mjs';
 import { resolvePolicy } from './terminal.mjs';
 import { issueGrant, bootstrapTtlMs } from './security/grants.mjs';
 import { loadPtyModule } from './pty.mjs';
+import { createZip } from './zip.mjs';
 
 const log = logger('server');
 
@@ -420,6 +421,32 @@ export class RazorServer {
         const result = this.#workspace.remove(rel);
         this.#gate.audit.record('file.removed', { path: result.path });
         return this.#json(res, 200, result);
+      }
+      if (req.method === 'GET' && url.pathname === '/api/files/download') {
+        const absolute = this.#workspace.resolveSafe(rel, { mustExist: true });
+        const stat = statSync(absolute);
+        if (!stat.isFile()) return this.#json(res, 400, { error: 'not-a-file' });
+        const buffer = readFileSync(absolute);
+        const name = basename(absolute);
+        this.#gate.audit.record('file.downloaded', { path: rel, bytes: buffer.length });
+        res.writeHead(200, {
+          'content-type': 'application/octet-stream',
+          'content-disposition': `attachment; filename="${encodeURIComponent(name)}"`,
+          'content-length': buffer.length,
+        });
+        return res.end(buffer);
+      }
+      if (req.method === 'GET' && url.pathname === '/api/files/export-zip') {
+        const allFiles = this.#workspace.getAllFiles();
+        const zipBuffer = createZip(allFiles);
+        const name = `workspace-${new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)}.zip`;
+        this.#gate.audit.record('workspace.exported_zip', { count: allFiles.length, bytes: zipBuffer.length });
+        res.writeHead(200, {
+          'content-type': 'application/zip',
+          'content-disposition': `attachment; filename="${name}"`,
+          'content-length': zipBuffer.length,
+        });
+        return res.end(zipBuffer);
       }
       return this.#json(res, 405, { error: 'method-not-allowed' });
     } catch (err) {

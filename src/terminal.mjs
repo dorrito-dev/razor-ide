@@ -239,16 +239,25 @@ export class TerminalSession extends EventEmitter {
     return { ok: true, pid: pty.pid, shell, confinement: this.#confinement.mode };
   }
 
-  /** A deliberately small environment: no proxy vars, no extra PATH entries. */
+  /** Environment for the spawned terminal shell, ensuring python, node, and toolchains are reachable. */
   #childEnv() {
+    const defaultBase = 'C:\\Windows\\System32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0';
+    const hostPath = process.env.PATH || process.env.Path || '';
+    const finalPath = process.env.RAZOR_TERMINAL_PATH || hostPath || defaultBase;
+
     const env = {
-      PATH: 'C:\\Windows\\System32;C:\\Windows;C:\\Windows\\System32\\Wbem',
+      PATH: finalPath,
+      Path: finalPath,
+      PATHEXT: process.env.PATHEXT ?? '.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC',
       SystemRoot: process.env.SystemRoot ?? 'C:\\Windows',
-      COMSPEC: 'C:\\Windows\\System32\\cmd.exe',
+      SystemDrive: process.env.SystemDrive ?? 'C:',
+      COMSPEC: process.env.COMSPEC ?? 'C:\\Windows\\System32\\cmd.exe',
       TEMP: process.env.TEMP ?? 'C:\\Windows\\Temp',
       TMP: process.env.TMP ?? 'C:\\Windows\\Temp',
       USERPROFILE: process.env.USERPROFILE ?? '',
       USERNAME: process.env.USERNAME ?? '',
+      APPDATA: process.env.APPDATA ?? '',
+      LOCALAPPDATA: process.env.LOCALAPPDATA ?? '',
       HOME: this.#cwd,
       RAZOR_SESSION: '1',
     };

@@ -184,3 +184,10 @@ test('seeding is idempotent and does not clobber edits', () => {
   seedWorkspace(seeded);
   assert.equal(readFileSync(join(root, 'hello.py'), 'utf8'), '# my work\n');
 });
+
+test('getAllFiles returns all workspace files', () => {
+  const all = workspace.getAllFiles();
+  const names = all.map((f) => f.name);
+  assert.ok(names.includes('src/main.py'));
+  assert.ok(names.includes('deep/nested/new.txt'));
+});

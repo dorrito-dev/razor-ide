@@ -117,7 +117,9 @@ export function buildSebPolicy(opts) {
     enableMiddleMouse: false,
 
     // -- browser policy --------------------------------------------------
-    allowDownloads: false,
+    ...(process.env.RAZOR_SEB_ALLOW_DOWNLOADS === '1' || opts.allowDownloads
+      ? { allowDownloads: true, chooseFileToDownloadPath: true }
+      : { allowDownloads: false }),
     allowUploads: false,
     allowSpellCheck: false,
     allowDeveloperConsole: enableDevConsole,

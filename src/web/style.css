@@ -69,6 +69,30 @@ html, body {
   cursor: pointer;
 }
 .btn:hover, .icon-btn:hover { background: #2b323f; }
+.btn-run {
+  background: #195e34;
+  border-color: #26874b;
+  color: #fff;
+  font-weight: 600;
+}
+.btn-run:hover { background: #227944; }
+.btn-accent {
+  background: #1b4b7a;
+  border-color: #2b6cb0;
+  color: #fff;
+  font-weight: 500;
+}
+.btn-accent:hover { background: #24639e; }
+.badge-isolated {
+  font-size: 10px;
+  background: #15291e;
+  color: #5fd38d;
+  border: 1px solid #2f5c43;
+  border-radius: 4px;
+  padding: 1px 5px;
+  text-transform: none;
+  letter-spacing: 0;
+}
 .icon-btn { padding: 1px 6px; line-height: 1.2; }
 
 /* -------------------------------------------------------------------- body */

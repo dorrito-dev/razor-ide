@@ -11,7 +11,7 @@
 // can prove that the real SEB client accepts our file. Only SEB can. This
 // script produces the artefact and, on request, launches it and then reads
 // SEB's own log directory to see whether the configuration was accepted.
-import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { hostname } from 'node:os';
@@ -26,6 +26,7 @@ const { sebConfigKey, sebPasswordHash } = await import('../src/security/crypto.m
 const args = process.argv.slice(2);
 const flag = (name) => args.includes(name);
 
+mkdirSync(join(ROOT, 'run'), { recursive: true });
 const OUT = join(ROOT, 'run', 'verify.seb');
 const PLIST = join(ROOT, 'run', 'verify.plist.xml');
 const PORT = 45909;

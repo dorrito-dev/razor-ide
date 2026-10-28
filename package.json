@@ -17,6 +17,7 @@
     "start:seb": "node src/main.mjs --seb",
     "admin": "node tools/admin-cli.mjs",
     "fake-admin": "node tools/fake-admin.mjs",
+    "export": "node tools/export-workspace.mjs",
     "test": "node --test \"test/**/*.test.mjs\""
   },
   "dependencies": {
